@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 
-
+from tqdm import tqdm
 import json
 import gzip
 from .helpers import *
-from algorithms.statistics import *
-from algorithms.discussion_trees import *
-from algorithms.network import *
+from ..algorithms.statistics import *
+from ..algorithms.discussion_trees import *
+from ..algorithms.network import *
 
 
 from pathlib import Path
@@ -104,7 +104,7 @@ class ScoredDatasetHandler:
         Yields:
             Tuple of (username, row_data)
         """
-        for file_path in self.user_files:
+        for file_path in tqdm(self.user_files):
             username = file_path.stem.replace(".jsonl", "")
             for row in self._read_file(file_path):
                 yield username, row
@@ -244,9 +244,7 @@ class ScoredDatasetHandler:
 
                     yield username, comment_obj, parent_post_obj
 
-    def interactions(
-        self, row: Dict[str, Any], level: str = "comment"
-    ) -> Iterator[Tuple[str, str, int]]:
+    def interactions(self, row: Dict[str, Any]) -> Iterator[Tuple[str, str, int]]:
         """
         Extract interactions between users based on comments and posts.
 
@@ -257,7 +255,7 @@ class ScoredDatasetHandler:
         Yields:
             Tuple of (replying_user, replied_to_user, timestamp)
         """
-        return all_interactions(row, level)
+        return all_interactions(row)
 
     def higher_order_interactions(
         self, row: Dict[str, Any], level: str = "comment"
@@ -379,6 +377,43 @@ class ScoredDatasetHandler:
             NetworkX DiGraph representing the discussion tree
         """
         return discussion_tree(row, node_attrs)
+
+
+class TimeSlicedHandler(ScoredDatasetHandler):
+    def __init__(self, parent_handler, start_time, end_time):
+        self.dataset_path = parent_handler.dataset_path
+        self.time_range = (start_time, end_time)
+        self._user_files = parent_handler._user_files
+
+    def iter_all_data(self):
+        for username, row in super().iter_all_data():
+            # Filter posts and comments by time
+            filtered_posts = []
+            filtered_comments = []
+
+            if "posts" in row and row["posts"]:
+                for post in row["posts"]:
+                    if (
+                        self.time_range[0]
+                        <= post.get("created", 0)
+                        <= self.time_range[1]
+                    ):
+                        filtered_posts.append(post)
+
+            if "comments" in row and row["comments"]:
+                for comment in row["comments"]:
+                    if (
+                        self.time_range[0]
+                        <= comment.get("created", 0)
+                        <= self.time_range[1]
+                    ):
+                        filtered_comments.append(comment)
+
+            if filtered_posts or filtered_comments:
+                filtered_row = row.copy()
+                filtered_row["posts"] = filtered_posts
+                filtered_row["comments"] = filtered_comments
+                yield username, filtered_row
 
 
 def timestamp_to_datetime(timestamp: int) -> datetime:

@@ -1,14 +1,12 @@
 from collections import defaultdict
 from datetime import datetime
 from typing import Dict, Any
-from collections.abc import Callable
-from typing import Union, List
+
 from statistics import mean, median, stdev
-from algorithms.filters import create_text_filter, create_metadata_filter
-from classes.handler import ScoredDatasetHandler
+from ..algorithms.filters import create_text_filter, create_metadata_filter
 
 
-def user_stats(handler: ScoredDatasetHandler) -> Dict[str, Dict[str, Any]]:
+def user_stats(handler: object) -> Dict[str, Dict[str, Any]]:
     """
     Get comprehensive statistics for all users in the dataset with one pass.
 
@@ -334,7 +332,7 @@ def user_stats(handler: ScoredDatasetHandler) -> Dict[str, Dict[str, Any]]:
     return final_stats
 
 
-def community_stats(handler: ScoredDatasetHandler) -> Dict[str, Dict[str, Any]]:
+def community_stats(handler: object) -> Dict[str, Dict[str, Any]]:
     """
     Get comprehensive statistics for each community in the dataset.
 

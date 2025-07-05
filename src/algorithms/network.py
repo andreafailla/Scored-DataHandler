@@ -1,7 +1,6 @@
 from typing import Dict, Any, Iterator, Tuple, List, Set, Optional
 from collections import defaultdict
 import networkx as nx
-from classes.handler import ScoredDatasetHandler
 
 
 def all_interactions(row: Dict[str, Any]) -> Iterator[Tuple[str, str, int]]:

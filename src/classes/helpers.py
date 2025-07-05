@@ -1,8 +1,5 @@
 from dataclasses import dataclass
 from typing import Dict, Any, List
-from typing import Optional, Union
-from pathlib import Path
-from .handler import ScoredDatasetHandler
 
 
 @dataclass
@@ -187,40 +184,3 @@ class Comment:
             author_flair_text=data.get("author_flair_text", ""),
             profile_picture=data.get("profile_picture", ""),
         )
-
-
-class TimeSlicedHandler(ScoredDatasetHandler):
-    def __init__(self, parent_handler, start_time, end_time):
-        self.dataset_path = parent_handler.dataset_path
-        self.time_range = (start_time, end_time)
-        self._user_files = parent_handler._user_files
-
-    def iter_all_data(self):
-        for username, row in super().iter_all_data():
-            # Filter posts and comments by time
-            filtered_posts = []
-            filtered_comments = []
-
-            if "posts" in row and row["posts"]:
-                for post in row["posts"]:
-                    if (
-                        self.time_range[0]
-                        <= post.get("created", 0)
-                        <= self.time_range[1]
-                    ):
-                        filtered_posts.append(post)
-
-            if "comments" in row and row["comments"]:
-                for comment in row["comments"]:
-                    if (
-                        self.time_range[0]
-                        <= comment.get("created", 0)
-                        <= self.time_range[1]
-                    ):
-                        filtered_comments.append(comment)
-
-            if filtered_posts or filtered_comments:
-                filtered_row = row.copy()
-                filtered_row["posts"] = filtered_posts
-                filtered_row["comments"] = filtered_comments
-                yield username, filtered_row
